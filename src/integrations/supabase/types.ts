@@ -14,7 +14,201 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      boards: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          owner_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boards_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      components: {
+        Row: {
+          board_id: string | null
+          component_type: Database["public"]["Enums"]["component_type"]
+          content: string | null
+          created_at: string
+          id: string
+          position_x: number | null
+          position_y: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          board_id?: string | null
+          component_type: Database["public"]["Enums"]["component_type"]
+          content?: string | null
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string | null
+          component_type?: Database["public"]["Enums"]["component_type"]
+          content?: string | null
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "components_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deadlock_detections: {
+        Row: {
+          board_id: string | null
+          conflicting_components: Json
+          conflicting_users: Json
+          cycles: Json
+          detected_at: string
+          id: string
+          recommended_actions: Json
+          resolved: boolean | null
+          resolved_at: string | null
+        }
+        Insert: {
+          board_id?: string | null
+          conflicting_components: Json
+          conflicting_users: Json
+          cycles: Json
+          detected_at?: string
+          id?: string
+          recommended_actions: Json
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Update: {
+          board_id?: string | null
+          conflicting_components?: Json
+          conflicting_users?: Json
+          cycles?: Json
+          detected_at?: string
+          id?: string
+          recommended_actions?: Json
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deadlock_detections_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resource_locks: {
+        Row: {
+          acquired_at: string | null
+          component_id: string | null
+          id: string
+          released_at: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["lock_status"]
+          user_id: string | null
+        }
+        Insert: {
+          acquired_at?: string | null
+          component_id?: string | null
+          id?: string
+          released_at?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["lock_status"]
+          user_id?: string | null
+        }
+        Update: {
+          acquired_at?: string | null
+          component_id?: string | null
+          id?: string
+          released_at?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["lock_status"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_locks_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_locks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +217,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      component_type: "card" | "section" | "document" | "cell"
+      lock_status: "locked" | "waiting" | "released"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +345,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      component_type: ["card", "section", "document", "cell"],
+      lock_status: ["locked", "waiting", "released"],
+    },
   },
 } as const
