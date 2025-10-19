@@ -33,6 +33,11 @@ const LandingPage = () => {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
+                <Link to="/deadlock-info">
+                  Learn About Deadlocks
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" size="lg">
                 <Link to="/architecture">
                   View Architecture
                 </Link>

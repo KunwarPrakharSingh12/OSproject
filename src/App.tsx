@@ -8,6 +8,7 @@ import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import BoardPage from "./pages/BoardPage";
 import ArchitecturePage from "./pages/ArchitecturePage";
+import DeadlockInfoPage from "./pages/DeadlockInfoPage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/board/:boardId" element={<BoardPage />} />
           <Route path="/architecture" element={<ArchitecturePage />} />
+          <Route path="/deadlock-info" element={<DeadlockInfoPage />} />
           <Route path="/demo" element={<Index />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

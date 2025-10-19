@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DeadlockMonitor } from "@/components/DeadlockMonitor";
 
 interface Board {
   id: string;
@@ -215,9 +216,10 @@ const BoardPage = () => {
 
       if (!lock) return;
 
+      // Delete the lock instead of updating to avoid unique constraint issues
       const { error } = await supabase
         .from("resource_locks")
-        .update({ released_at: new Date().toISOString() })
+        .delete()
         .eq("id", lock.id);
 
       if (error) throw error;
@@ -225,6 +227,30 @@ const BoardPage = () => {
       toast({
         title: "Lock Released",
         description: "Component is now available for others",
+      });
+
+      fetchLocks();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const releaseLockById = async (lockId: string) => {
+    try {
+      const { error } = await supabase
+        .from("resource_locks")
+        .delete()
+        .eq("id", lockId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Lock Released",
+        description: "Component released to help resolve deadlock",
       });
 
       fetchLocks();
@@ -347,6 +373,18 @@ const BoardPage = () => {
 
       {/* Board Content */}
       <div className="container mx-auto px-4 py-8">
+        {/* Deadlock Monitor */}
+        {components.length > 0 && (
+          <div className="mb-8">
+            <DeadlockMonitor
+              locks={locks}
+              components={components}
+              currentUserId={user?.id || ""}
+              onResolve={releaseLockById}
+            />
+          </div>
+        )}
+
         {components.length === 0 ? (
           <Card className="p-12 text-center">
             <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
