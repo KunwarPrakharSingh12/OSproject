@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, XCircle } from "lucide-react";
 
 export interface Process {
   id: string;
@@ -32,6 +32,10 @@ export const ProcessInput = ({ processes, onProcessesChange }: ProcessInputProps
     onProcessesChange(processes.filter((p) => p.id !== id));
   };
 
+  const clearAllProcesses = () => {
+    onProcessesChange([]);
+  };
+
   const updateProcess = (id: string, field: keyof Process, value: string | string[]) => {
     onProcessesChange(
       processes.map((p) => (p.id === id ? { ...p, [field]: value } : p))
@@ -54,10 +58,23 @@ export const ProcessInput = ({ processes, onProcessesChange }: ProcessInputProps
     <Card className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Process Configuration</h2>
-        <Button onClick={addProcess} size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Process
-        </Button>
+        <div className="flex gap-2">
+          {processes.length > 0 && (
+            <Button 
+              onClick={clearAllProcesses} 
+              size="sm" 
+              variant="outline"
+              className="gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+            >
+              <XCircle className="h-4 w-4" />
+              Clear All
+            </Button>
+          )}
+          <Button onClick={addProcess} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Process
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">
