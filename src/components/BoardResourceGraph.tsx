@@ -1,5 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
 interface ResourceLock {
   id: string;
@@ -23,6 +25,9 @@ interface BoardResourceGraphProps {
 
 export const BoardResourceGraph = ({ locks, components, cycles }: BoardResourceGraphProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [zoom, setZoom] = useState(1);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,8 +40,9 @@ export const BoardResourceGraph = ({ locks, components, cycles }: BoardResourceG
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear canvas with white background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (locks.length === 0) {
       ctx.fillStyle = "hsl(var(--muted-foreground))";
@@ -59,10 +65,10 @@ export const BoardResourceGraph = ({ locks, components, cycles }: BoardResourceG
       resources.add(lock.component_id);
     });
 
-    // Calculate positions
+    // Calculate positions with zoom
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(canvas.width, canvas.height) * 0.35;
+    const radius = Math.min(canvas.width, canvas.height) * 0.35 * zoom;
 
     const userPositions: Map<string, { x: number; y: number }> = new Map();
     const resourcePositions: Map<string, { x: number; y: number }> = new Map();
@@ -248,15 +254,101 @@ export const BoardResourceGraph = ({ locks, components, cycles }: BoardResourceG
     ctx.setLineDash([]);
     ctx.fillStyle = "hsl(var(--foreground))";
     ctx.fillText("Allocated", legendX + 170, legendY + 41);
-  }, [locks, components, cycles]);
+
+    // Handle mouse move for tooltips
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      let foundNode = false;
+
+      // Check users
+      userArray.forEach((userId) => {
+        const pos = userPositions.get(userId);
+        if (!pos) return;
+        const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+        if (distance < 30) {
+          const userLocks = locks.filter(l => l.user_id === userId);
+          const acquired = userLocks.filter(l => l.acquired_at).length;
+          const waiting = userLocks.filter(l => !l.acquired_at).length;
+          setTooltip({
+            x: e.clientX,
+            y: e.clientY,
+            text: `User ${userArray.indexOf(userId) + 1}\nAcquired: ${acquired}\nWaiting: ${waiting}`
+          });
+          setHoveredNode(userId);
+          foundNode = true;
+        }
+      });
+
+      // Check components
+      if (!foundNode) {
+        componentArray.forEach((compId) => {
+          const pos = resourcePositions.get(compId);
+          if (!pos) return;
+          const component = components.find((c) => c.id === compId);
+          if (Math.abs(x - pos.x) < 12 && Math.abs(y - pos.y) < 12) {
+            const componentLocks = locks.filter(l => l.component_id === compId);
+            const holder = componentLocks.find(l => l.acquired_at);
+            setTooltip({
+              x: e.clientX,
+              y: e.clientY,
+              text: `${component?.title || 'Component'}\n${holder ? 'Locked' : 'Available'}`
+            });
+            setHoveredNode(compId);
+            foundNode = true;
+          }
+        });
+      }
+
+      if (!foundNode) {
+        setTooltip(null);
+        setHoveredNode(null);
+      }
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    return () => canvas.removeEventListener('mousemove', handleMouseMove);
+  }, [locks, components, cycles, zoom]);
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
+  const handleReset = () => setZoom(1);
 
   return (
-    <Card className="p-6 bg-gradient-subtle border-primary/20">
-      <h2 className="text-xl font-semibold mb-4 text-gradient-primary">Wait-For Graph Visualization</h2>
-      <canvas
-        ref={canvasRef}
-        className="w-full h-[500px] border border-primary/30 rounded-lg bg-background/50 backdrop-blur-sm"
-      />
+    <Card className="p-6 bg-white border-border shadow-lg">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-foreground">Wait-For Graph Visualization</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleZoomOut}>
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleReset}>
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleZoomIn}>
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-[500px] border border-border rounded-lg bg-white cursor-pointer"
+        />
+        {tooltip && (
+          <div
+            className="fixed z-50 px-3 py-2 text-sm bg-popover text-popover-foreground border border-border rounded-md shadow-md pointer-events-none whitespace-pre-line"
+            style={{
+              left: tooltip.x + 10,
+              top: tooltip.y + 10,
+            }}
+          >
+            {tooltip.text}
+          </div>
+        )}
+      </div>
     </Card>
   );
 };
