@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Activity, ArrowLeft, Plus, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -44,6 +45,18 @@ interface ResourceLock {
   acquired_at: string | null;
   released_at: string | null;
 }
+
+// Validation schema for component creation
+const componentSchema = z.object({
+  title: z.string()
+    .trim()
+    .min(1, "Title is required")
+    .max(200, "Title must be less than 200 characters"),
+  content: z.string()
+    .trim()
+    .max(5000, "Content must be less than 5000 characters")
+    .optional()
+});
 
 const BoardPage = () => {
   const { boardId } = useParams();
@@ -147,10 +160,16 @@ const BoardPage = () => {
   };
 
   const createComponent = async () => {
-    if (!newComponentTitle.trim()) {
+    // Validate input
+    const validation = componentSchema.safeParse({
+      title: newComponentTitle,
+      content: newComponentContent || undefined
+    });
+
+    if (!validation.success) {
       toast({
-        title: "Error",
-        description: "Component title is required",
+        title: "Validation Error",
+        description: validation.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -159,8 +178,8 @@ const BoardPage = () => {
     try {
       const { error } = await supabase.from("components").insert({
         board_id: boardId,
-        title: newComponentTitle,
-        content: newComponentContent,
+        title: validation.data.title,
+        content: validation.data.content || null,
         position_x: Math.floor(Math.random() * 300),
         position_y: Math.floor(Math.random() * 200),
       });
