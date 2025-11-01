@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Activity, LogOut, Plus, Users } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Board {
   id: string;
@@ -142,6 +143,7 @@ const Dashboard = () => {
             <span className="text-sm text-muted-foreground">
               {user?.email}
             </span>
+            <ThemeToggle />
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout

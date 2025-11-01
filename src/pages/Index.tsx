@@ -7,6 +7,7 @@ import { ResourceConfiguration } from "@/components/ResourceConfiguration";
 import { detectDeadlock } from "@/components/DeadlockDetector";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Index = () => {
   const [processes, setProcesses] = useState<Process[]>([]);
@@ -28,7 +29,10 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center relative">
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Activity className="h-10 w-10 text-primary" />
             <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
