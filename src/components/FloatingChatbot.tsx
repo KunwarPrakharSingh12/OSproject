@@ -33,6 +33,25 @@ export const FloatingChatbot = () => {
 
       if (error) throw error;
 
+      if (data.error) {
+        // Handle API errors gracefully
+        const errorMessage = data.userMessage || data.error;
+        setMessages((prev) => [
+          ...prev,
+          { 
+            role: "assistant", 
+            content: `⚠️ ${errorMessage}` 
+          },
+        ]);
+        
+        toast({
+          title: "Rate Limit",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: data.reply },
