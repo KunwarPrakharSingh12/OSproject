@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle } from "lucide-react";
 import { DetectionResult } from "./DeadlockDetector";
 import { getResolutionStrategies } from "./DeadlockDetector";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DetectionResultsProps {
   result: DetectionResult;
@@ -11,8 +12,30 @@ interface DetectionResultsProps {
 export const DetectionResults = ({ result }: DetectionResultsProps) => {
   const strategies = getResolutionStrategies(result.cycles);
 
+  // Extract processes involved in cycles
+  const getProcessesInCycles = () => {
+    const processes = new Set<string>();
+    result.cycles.forEach(cycle => {
+      cycle.forEach(node => {
+        if (node.startsWith('P')) {
+          processes.add(node);
+        }
+      });
+    });
+    return Array.from(processes);
+  };
+
   return (
     <div className="space-y-4">
+      {result.hasDeadlock && (
+        <Alert variant="destructive" className="border-2">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertDescription className="text-base font-semibold">
+            ⚠️ Deadlock detected between {getProcessesInCycles().join(', ')}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card className="p-6">
         <div className="flex items-start gap-4">
           {result.hasDeadlock ? (

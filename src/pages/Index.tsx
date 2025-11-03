@@ -25,6 +25,34 @@ const Index = () => {
     setDetectionResult(null);
   };
 
+  const handleResolveDeadlock = () => {
+    if (!detectionResult || !detectionResult.hasDeadlock) return;
+
+    // Get the first cycle
+    const cycle = detectionResult.cycles[0];
+    
+    // Find a process in the cycle
+    const processInCycle = cycle.find(node => node.startsWith('P'));
+    
+    if (processInCycle) {
+      // Remove one requesting resource from this process to break the cycle
+      setProcesses(prevProcesses => 
+        prevProcesses.map(p => {
+          if (p.id === processInCycle && p.requesting.length > 0) {
+            return {
+              ...p,
+              requesting: p.requesting.slice(0, -1)
+            };
+          }
+          return p;
+        })
+      );
+      
+      // Clear detection result to force re-detection
+      setDetectionResult(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -75,8 +103,8 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Analyze Button */}
-        <div className="flex justify-center mb-6">
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4 mb-6">
           <Button
             onClick={handleAnalyze}
             size="lg"
@@ -84,8 +112,19 @@ const Index = () => {
             disabled={processes.length === 0}
           >
             <Activity className="h-5 w-5" />
-            Analyze for Deadlocks
+            Detect Deadlock
           </Button>
+          
+          {detectionResult?.hasDeadlock && (
+            <Button
+              onClick={handleResolveDeadlock}
+              size="lg"
+              variant="destructive"
+              className="gap-2 px-8"
+            >
+              Break Deadlock
+            </Button>
+          )}
         </div>
 
         {/* Results */}
