@@ -134,6 +134,42 @@ export type Database = {
           },
         ]
       }
+      deadlock_scenarios: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          process_count: number
+          processes: Json
+          resource_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          process_count: number
+          processes: Json
+          resource_count: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          process_count?: number
+          processes?: Json
+          resource_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

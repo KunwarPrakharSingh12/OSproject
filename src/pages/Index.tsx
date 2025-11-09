@@ -1,19 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { ProcessInput, Process } from "@/components/ProcessInput";
 import { ResourceGraph } from "@/components/ResourceGraph";
 import { DetectionResults } from "@/components/DetectionResults";
 import { ExampleScenarios } from "@/components/ExampleScenarios";
 import { ResourceConfiguration } from "@/components/ResourceConfiguration";
+import { ScenarioManager } from "@/components/ScenarioManager";
 import { detectDeadlock } from "@/components/DeadlockDetector";
 import { Button } from "@/components/ui/button";
-import { Activity } from "lucide-react";
+import { Activity, LogOut, Home } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useToast } from "@/hooks/use-toast";
+import { User } from "@supabase/supabase-js";
 
 const Index = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [processes, setProcesses] = useState<Process[]>([]);
   const [resourceCount, setResourceCount] = useState<number>(5);
   const [processCount, setProcessCount] = useState<number>(10);
   const [detectionResult, setDetectionResult] = useState<ReturnType<typeof detectDeadlock> | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check authentication
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleAnalyze = () => {
     const result = detectDeadlock(processes);
@@ -53,23 +84,70 @@ const Index = () => {
     }
   };
 
+  const handleLoadScenario = (scenario: any) => {
+    setProcesses(scenario.processes);
+    setProcessCount(scenario.process_count);
+    setResourceCount(scenario.resource_count);
+    setDetectionResult(null);
+    toast({
+      title: "Success",
+      description: `Loaded scenario: ${scenario.name}`,
+    });
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Activity className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="mb-8 text-center relative">
-          <div className="absolute top-0 right-0">
+      {/* Header */}
+      <header className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Activity className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-bold">ZeroLock Detector</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {user?.email}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+              <Home className="h-4 w-4" />
+            </Button>
             <ThemeToggle />
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Activity className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Deadlock Detector
-            </h1>
-          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Title */}
+        <div className="mb-6 text-center">
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Analyze process dependencies and resource allocation to identify circular wait conditions and prevent system deadlocks
+            Analyze process dependencies and resource allocation to identify circular wait conditions
           </p>
+        </div>
+
+        {/* Scenario Manager */}
+        <div className="mb-6 flex justify-center">
+          <ScenarioManager
+            processes={processes}
+            processCount={processCount}
+            resourceCount={resourceCount}
+            onLoadScenario={handleLoadScenario}
+          />
         </div>
 
         {/* Resource Configuration */}
